@@ -1,11 +1,12 @@
-from market import app
-from flask import jsonify, url_for, request, redirect
-from market.modules import Item
-from market.modules import User
-from market import db  
+from flask import Blueprint, jsonify, request 
+from market.models import Item
+from market.models import User
+from market.config import db  
 from flask_login import login_user, logout_user, current_user
 
-@app.post("/market")
+blueprint = Blueprint("market", __name__)
+
+@blueprint.post("/market")
 def market_post():
     if current_user.is_authenticated:
         purchased_item = request.form.get('purchased_item')
@@ -22,7 +23,7 @@ def market_post():
         return jsonify({"message": "You have to log in first"}), 400        
    
 
-@app.get("/market")
+@blueprint.get("/market")
 def market_page():
     print(current_user.username)
     items_query = Item.query.filter_by(forsale=1).all()
@@ -39,7 +40,7 @@ def market_page():
         "owned_items": owned_items
     }), 200
 
-@app.post("/register")
+@blueprint.post("/register")
 def register_page():
     data = request.get_json()
     if User.query.filter_by(username=data['username']).first():
@@ -52,7 +53,7 @@ def register_page():
     login_user(user_to_create)
     return jsonify({"message": "User created successfully"}), 201
 
-@app.post('/login')
+@blueprint.post('/login')
 def login_page():
     data = request.get_json()
     attempted_user = User.query.filter_by(username=data['username']).first()
@@ -63,12 +64,12 @@ def login_page():
     else: 
         return jsonify({"message": "Invalid credentials"}), 401
 
-@app.post('/logout')
+@blueprint.post('/logout')
 def logout_page():
     logout_user()
     return jsonify({"message": "Logged out successfully"}), 200
 
-@app.get('/profile/<username>')
+@blueprint.get('/profile/<username>')
 def profile(username):
     user = User.query.filter_by(username=username).first()
     if user == None:
@@ -82,37 +83,34 @@ def profile(username):
         "owned_items": owned_items
     }), 200
 
-@app.post('/profile/<username>')
+@blueprint.post('/profile/<username>')
 def profile_post(username):
     user = User.query.filter_by(username=username).first()
     if user == None:
         return jsonify({"message": "User not found"}), 404
 
     if current_user.username == username:
-        sold_item = request.form.get('sell_item')
+        sold_item = request.form.get('item_name')
         p_item_obj = Item.query.filter_by(name=sold_item).first()
         if p_item_obj:
-            p_item_obj.sell()
-            return jsonify({"message": "Item is for sale now"}), 200
-        
-        stop_selling = request.form.get('stop_selling')
-        p_item_obj = Item.query.filter_by(name=stop_selling).first()
-        if p_item_obj:
-            p_item_obj.stop_selling()
-            return jsonify({"message": "Item is not for sale anymore"}), 200
+            response = p_item_obj.tougle_sale()
+            if response:
+                return jsonify({"message": "Item is for sale now"}), 200
+            else:
+                return jsonify({"message": "Item is not for sale anymore"}), 200
+        else:
+            return jsonify({"message": "Item does not exist"}), 404
     else: 
         return jsonify({"message": "You can't sell items for other users"}), 400
-    return redirect(url_for('profile', username=username) )
 
-@app.post("/create_item")
+@blueprint.post("/create_item")
 def create_item_page():
     data = request.get_json()
     item_to_create = Item(name=data['name'],
                             price=data['price'],
                             description=data['description'],
                             owner=current_user.id,
-                            forsale=1)
-                            
+                            forsale=True)
     db.session.add(item_to_create)
     db.session.commit()
     return jsonify({"message": "Item created successfully"}), 201

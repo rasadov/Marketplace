@@ -1,10 +1,9 @@
-from collections.abc import Mapping, Sequence
 import re
-from typing import Any
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, IntegerField
 from wtforms.validators import Length, EqualTo, Email, DataRequired, ValidationError, Regexp
-from market import User
+
+from market.config import User
 
 
 

@@ -1,4 +1,4 @@
-from market import db, bcrypt, login_manager
+from market.config import db, bcrypt, login_manager
 from flask_login import UserMixin
 
 @login_manager.user_loader
@@ -41,7 +41,7 @@ class Item(db.Model):
     description = db.Column(db.String(length=1024),
                             nullable=False, unique=False)
     owner = db.Column(db.Integer(), db.ForeignKey('user.id'))
-    forsale = db.Column(db.Integer(), nullable=False)
+    forsale = db.Column(db.Boolean(), nullable=False, default=True)
     def __repr__(self) -> str:
         return f'Item {self.name}'
     
@@ -53,10 +53,8 @@ class Item(db.Model):
             buyer.budget -= self.price
             self.forsale = 0
             db.session.commit()
-    def sell(self):
-        self.forsale = 1
+
+    def tougle_sale(self):
+        self.forsale = not self.forsale
         db.session.commit()
-    
-    def stop_selling(self):
-        self.forsale = 0
-        db.session.commit()
+        return self.forsale
