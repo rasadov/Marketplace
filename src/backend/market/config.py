@@ -14,6 +14,6 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+from market.routes import blueprint
 
-from market.models import User, Item
-from market import routes
+app.register_blueprint(blueprint)

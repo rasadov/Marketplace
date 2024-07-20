@@ -1,8 +1,8 @@
 from flask import Blueprint, jsonify, request 
-from market.models import Item
-from market.models import User
-from market.config import db  
 from flask_login import login_user, logout_user, current_user
+
+from market.models import Item, User
+from market.config import db
 
 blueprint = Blueprint("market", __name__)
 
